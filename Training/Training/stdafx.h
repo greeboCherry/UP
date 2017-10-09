@@ -7,11 +7,12 @@
 
 #include "targetver.h"
 
+#include <vector>
 #include <string>
 #include <iostream>
 #include <stdio.h>
 #include <tchar.h>
-#include <Windows.h> // Aditional Dependecies += winmm.lib
+#include <Windows.h> // Additional Dependencies += winmm.lib
 
 
 
