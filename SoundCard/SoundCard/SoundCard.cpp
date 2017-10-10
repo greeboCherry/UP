@@ -92,24 +92,94 @@ bool loadFileAndPlayWaveOut(std::string path = "Input/JazzTrio.wav")
 
 bool loadFileAndPlayDirectSound(std::string path = "Input/JazzTrio.wav")
 {
-    LPDIRECTSOUND8 lpds;
-    std::cout << "DirectSoundCreate8(): " << DirectSoundCreate8(NULL, &lpds, NULL) << std::endl;
-
-    DSBUFFERDESC bufferDescription;
 
 
 
+    FILE *file;
+    auto error = fopen_s(&file, path.c_str(), "rb");  //rb = read binary
+    if (error)
+    {
+        std::cout << "Error opening file" << path;
+        return false;
+    }
+    if (file)
+    {
+        std::cout << "File good, reading " << path << std::endl;
+        std::string stringData(4, '0'); //four bytes to hold 'RIFF'
 
-    /*int a, b, c;
-    LPCGUID guidPtr;
-    LPDIRECTSOUND8 ds8Ptr;
-    IDirectSound* DS;
-    LPUNKNOWN unknownPtr;
-    DS->Initialize(NULL);
-    */
-    //DirectSoundCaptureEnumerate()
-//    DirectSoundCreate8(guidPtr, &ds8Ptr, DS);
-    
+        fread(&stringData[0], sizeof(stringData[0]), 4, file); //read in first four bytes
+        std::cout << "ChunkID: \t" << stringData << std::endl;
+        if (stringData == "RIFF")
+        { //we had 'RIFF' let's continue
+
+            DWORD dIntegerData; //this ain't string :(
+            fread(&dIntegerData, sizeof(dIntegerData), 1, file);    //4
+            std::cout << "ChunkSize : \t" << dIntegerData << "\t+8" << std::endl;
+
+            fread(&stringData[0], sizeof(stringData[0]), 4, file); //8
+            std::cout << "Format : \t" << stringData << std::endl;
+
+            fread(&stringData[0], sizeof(stringData[0]), 4, file); //12
+            std::cout << "Subchunk1ID: \t" << stringData << std::endl;
+
+            DWORD Subchunk1Size;
+            fread(&Subchunk1Size, sizeof(Subchunk1Size), 1, file); //16
+            std::cout << "Subchunk1Size: \t" << Subchunk1Size << std::endl;
+
+            fread(&waveFormatex.wFormatTag, sizeof(WORD), 1, file); //20
+            std::cout << "AudioFormat: \t" << waveFormatex.wFormatTag << std::endl;
+            fread(&waveFormatex.nChannels, sizeof(WORD), 1, file); //22
+            std::cout << "NumChannels: \t" << waveFormatex.nChannels << std::endl;
+            fread(&waveFormatex.nSamplesPerSec, sizeof(DWORD), 1, file); //24
+            std::cout << "SampleRate: \t" << waveFormatex.nSamplesPerSec << std::endl;
+            fread(&waveFormatex.nAvgBytesPerSec, sizeof(DWORD), 1, file); //28
+            std::cout << "ByteRate: \t" << waveFormatex.nAvgBytesPerSec << std::endl;
+            fread(&waveFormatex.nBlockAlign, sizeof(WORD), 1, file);    //32
+            std::cout << "BlockAlign: \t" << waveFormatex.nBlockAlign << std::endl;
+            fread(&waveFormatex.wBitsPerSample, sizeof(WORD), 1, file); //34
+            std::cout << "BitsPerSample: \t" << waveFormatex.wBitsPerSample << std::endl;
+
+            fseek(file, 20 + Subchunk1Size, SEEK_SET);  //we move at the beiging of "data" sub-chunk
+            fread(&stringData[0], sizeof(stringData[0]), 4, file); //read in first four bytes
+            std::cout << "Subchank2ID: \t" << stringData << std::endl;
+
+            fread(&(waveHeader.dwBufferLength), sizeof(DWORD), 1, file);
+            std::cout << "Subchunk2Size: \t" << waveHeader.dwBufferLength << std::endl;
+
+            g_buffer = std::malloc(waveHeader.dwBufferLength);      //TODO make it RAII
+            waveHeader.lpData = (LPSTR)g_buffer;
+            fread(waveHeader.lpData, waveHeader.dwBufferLength, 1, file);
+            waveHeader.dwFlags = 0;
+            waveHeader.dwLoops = 0;
+
+            LPDIRECTSOUND8 lpds;
+            std::cout << "DirectSoundCreate8(): " << DirectSoundCreate8(NULL, &lpds, NULL) << std::endl;
+
+            DSBUFFERDESC bufferDescription;
+            bufferDescription.dwSize = sizeof(DSBUFFERDESC);
+            bufferDescription.dwFlags = 0;
+            bufferDescription.dwBufferBytes = waveHeader.dwBufferLength;
+            bufferDescription.dwReserved = 0;
+            bufferDescription.lpwfxFormat = &waveFormatex;
+            bufferDescription.guid3DAlgorithm = GUID_NULL;
+
+            LPDIRECTSOUNDBUFFER DSBptr;
+
+            std::cout << "CreateSoundBuffer(): " << lpds->CreateSoundBuffer(&bufferDescription, &DSBptr, NULL) << std::endl;
+
+
+            void* lockedBuffer;
+            DWORD lockedBufferSize = 0;
+           
+            std::cout << "Lock(): " << DSBptr->Lock(0, waveHeader.dwBufferLength, &lockedBuffer, &lockedBufferSize, 0, 0, 0) << std::endl;
+            std::cout << "Unlock(): " << DSBptr->Unlock(lockedBuffer, lockedBufferSize, 0, 0) << std::endl;
+            DSBptr->SetFormat(&waveFormatex);
+            //DSBptr->SetCurrentPosition(0);
+            DSBptr->SetVolume(DSBVOLUME_MAX);
+            std::cout << "Play()" << DSBptr->Play(0, 0, 0) << std::endl;
+
+        }
+    }
     return true;
 }
 
