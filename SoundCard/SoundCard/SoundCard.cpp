@@ -62,12 +62,6 @@ bool loadFileAndPlayWaveOut(std::string path = "Input/JazzTrio.wav")
             fread(&waveFormatex.wBitsPerSample, sizeof(WORD), 1, file); //34
             std::cout << "BitsPerSample: \t" << waveFormatex.wBitsPerSample << std::endl;
             
-            //WORD IntegerData;
-            //fread(&IntegerData, sizeof(IntegerData), 1, file);
-            //std::cout << "ExtraParamSize: \t" << IntegerData << std::endl;
-            ////if (waveFormatex.wFormatTag == 1) waveFormatex.cbSize = 0;
-            ////else fread(&waveFormatex.cbSize, sizeof(WORD), 1, file); //36
-
             fseek(file, 20 + Subchunk1Size, SEEK_SET);  //we move at the beiging of "data" sub-chunk
             fread(&stringData[0], sizeof(stringData[0]), 4, file); //read in first four bytes
             std::cout << "Subchank2ID: \t" << stringData << std::endl;
@@ -188,7 +182,7 @@ int main()
   //  PlaySound(TEXT("Input/JazzTrio.wav"), NULL, SND_FILENAME);
     //loadFileAndPlayWaveOut("input/gtr-nylon22.wav");
 
-    loadFileAndPlayDirectSound();
+    loadFileAndPlayWaveOut();
 
     std::cin.get();
     std::free(g_buffer);// - can't call until music is off
