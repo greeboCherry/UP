@@ -15,24 +15,20 @@ namespace GPS
 {
     class Program
     {
+        static string desiredDeviceName = "PENTA-GPS";
         static BluetoothClient bluetoothClient = new BluetoothClient();
         static void Main(string[] args)
         {
-            Console.WriteLine("Connecting to device ...");
+            Console.WriteLine("Detecting devices ...");
             BluetoothDeviceInfo deviceToPair = null;
             var devices = bluetoothClient.DiscoverDevices();
-            deviceToPair = devices.Where(x => x.DeviceName.Equals("PENTA-GPS")).FirstOrDefault();
+            deviceToPair = devices.Where(x => x.DeviceName.Equals(desiredDeviceName)).FirstOrDefault();
             if (deviceToPair != null)
             {
-                Console.WriteLine("Connection set!");
-                string blueToothInfo =
-                string.Format(
-                "- DeviceName: {0}{1}  Connected: {2}{1}  Address: {3}{1}  Last seen: {4}{1}  Last used: {5}{1}",
-                deviceToPair.DeviceName, Environment.NewLine, deviceToPair.Connected, deviceToPair.DeviceAddress, deviceToPair.LastSeen,
-                deviceToPair.LastUsed);
-                blueToothInfo += string.Format("  Class of device{0}   Device: {1}{0}   Major Device: {2}{0}   Service: {3}",
-                    Environment.NewLine, deviceToPair.ClassOfDevice.Device, deviceToPair.ClassOfDevice.MajorDevice, deviceToPair.ClassOfDevice.Service);
-                Console.WriteLine(blueToothInfo);
+                Console.WriteLine(desiredDeviceName + " found!");
+                Console.WriteLine(string.Format(
+                    "DeviceName: {0}\nAddress: {1}\n",
+                    deviceToPair.DeviceName, deviceToPair.DeviceAddress));
                 Console.WriteLine();
                 deviceToPair.Update();
                 deviceToPair.Refresh();
@@ -48,6 +44,12 @@ namespace GPS
                     Console.WriteLine("Device not paired, check bluetooth connection and PIN validity ");
                 }
             }
+            else
+            {
+                Console.WriteLine(string.Format("Found {0} devices but no {1} among them",
+                       devices.Length, desiredDeviceName));
+                    
+            }
             Console.ReadKey();
         }
 
@@ -61,7 +63,7 @@ namespace GPS
                 {
                     if (myNetworkStream.CanRead)
                     {
-                        byte[] myReadBuffer = new byte[65];
+                        byte[] myReadBuffer = new byte[256];
                         StringBuilder myCompleteMessage = new StringBuilder();
                         int numberOfBytesRead = 0;
 
@@ -84,8 +86,7 @@ namespace GPS
                         }
                         catch (Exception exc)
                         {
-                            Console.WriteLine("ERROR, wrong message read, Exception");
-                            Console.WriteLine(exc.Message);
+                            Console.WriteLine("ERROR, wrong message read, trying again");
                             finished = false;
                         }
                     }
@@ -106,7 +107,7 @@ namespace GPS
             minutes = Math.Floor(minutes);
             seconds = Math.Floor(seconds);
             tenths = Math.Floor(tenths);
-            Console.WriteLine("Latitude: " + Math.Floor(parsedMessage.Latitude) + "°" + minutes + "'" + seconds + "." + tenths);
+            Console.WriteLine("Latitude: " + Math.Floor(parsedMessage.Latitude) + "°" + minutes + "'" + seconds + "." + tenths + "\"" + "E");
             minutes = (parsedMessage.Longitude - Math.Floor(parsedMessage.Longitude)) * 60.0;
             seconds = (minutes - Math.Floor(minutes)) * 60.0;
             tenths = (seconds - Math.Floor(seconds)) * 10.0;
@@ -114,10 +115,12 @@ namespace GPS
             minutes = Math.Floor(minutes);
             seconds = Math.Floor(seconds);
             tenths = Math.Floor(tenths);
-            Console.WriteLine("Longtitude: " + Math.Floor(parsedMessage.Longitude) + "°" + minutes + "'" + seconds + "." + tenths);
-            Console.WriteLine(parsedMessage.Latitude.ToString());
-            Console.WriteLine("Wysokosc: " + parsedMessage.Altitude + parsedMessage.AltitudeUnits);
-            Console.WriteLine("Ilosc satelit: " + parsedMessage.NumberOfSatellites);
+            Console.WriteLine("Longitude: " + Math.Floor(parsedMessage.Longitude) + "°" + minutes + "'" + seconds + "." + tenths + "\"" + "N");
+            Console.WriteLine("Number of satellites being tracked: " + parsedMessage.NumberOfSatellites);
+            Console.WriteLine("Altitude above sea level " + parsedMessage.Altitude + "m");
+            Console.WriteLine(parsedMessage.Latitude.ToString() + ", " + parsedMessage.Longitude.ToString());
+
+
         }
     }
 }
